@@ -1,28 +1,29 @@
 import logging
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col, from_json, schema_of_json, lit,
     sha2, element_at, split, get_json_object, coalesce
 )
 
+# Enable auto-schema evolution for Delta merges
 spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("FHIR_Silver_Transformation")
+logger = logging.getLogger("silver_transformation")
 
 RESOURCES = ["Patient", "Encounter", "Condition", "Observation"]
 
-def process_silver_scd2(resource_type: str, business_key: str = "resource_id"):
-    bronze_table = f"bronze_{resource_type.lower()}"
-    silver_table = f"silver_{resource_type.lower()}"
-    
-    # If bronze table doesn't exist or is empty, create an empty silver table structure
-    if not spark.catalog.tableExists(bronze_table) or spark.read.table(bronze_table).rdd.isEmpty():
-        logger.warning(f"Bronze table {bronze_table} missing or empty. Creating empty {silver_table}.")
-        if not spark.catalog.tableExists(silver_table):
+
+def process_silver_scd2(resource_type, key_col="resource_id"):
+    bronze_tbl = f"bronze_{resource_type.lower()}"
+    silver_tbl = f"silver_{resource_type.lower()}"
+
+    # Verify bronze data exists before attempting transformations
+    if not spark.catalog.tableExists(bronze_tbl) or spark.read.table(bronze_tbl).isEmpty():
+        logger.warning(f"Bronze table '{bronze_tbl}' is missing or empty. Skipping...")
+        if not spark.catalog.tableExists(silver_tbl):
             spark.sql(f"""
-                CREATE TABLE IF NOT EXISTS {silver_table} (
+                CREATE TABLE IF NOT EXISTS {silver_tbl} (
                     resource_id STRING,
                     patient_id_ref STRING,
                     valid_from STRING,
@@ -33,68 +34,83 @@ def process_silver_scd2(resource_type: str, business_key: str = "resource_id"):
             """)
         return
 
-    df_bronze = spark.read.table(bronze_table)
+    bronze_df = spark.read.table(bronze_tbl)
 
-    df_with_ref = df_bronze.withColumn(
+    # Extract patient reference key from payload
+    df_with_ref = bronze_df.withColumn(
         "patient_id_ref",
         element_at(
             split(
                 coalesce(
                     get_json_object(col("raw_json"), "$.subject.reference"),
                     get_json_object(col("raw_json"), "$.patient.reference")
-                ), 
+                ),
                 "/"
-            ), 
+            ),
             -1
         )
     )
 
-    sample_payload = df_bronze.select("raw_json").first()[0]
-    payload_schema = schema_of_json(sample_payload)
+    # Infer JSON schema dynamically using first payload sample
+    sample_json = bronze_df.select("raw_json").first()[0]
+    payload_schema = schema_of_json(sample_json)
 
-    parsed_df = df_with_ref.withColumn("data", from_json(col("raw_json"), payload_schema)) \
+    # Flatten top-level JSON fields and set metadata
+    parsed_df = df_with_ref \
+        .withColumn("data", from_json(col("raw_json"), payload_schema)) \
         .select(
             col("resource_id"),
             col("patient_id_ref"),
             col("data.*"),
             col("extraction_timestamp"),
             col("raw_json")
-        )
-
-    parsed_df = parsed_df \
+        ) \
         .withColumn("row_hash", sha2(col("raw_json"), 256)) \
         .withColumn("valid_from", col("extraction_timestamp")) \
         .withColumn("valid_to", lit(None).cast("string")) \
         .withColumn("is_current", lit(True)) \
-        .dropDuplicates([business_key, "row_hash"])
+        .dropDuplicates([key_col, "row_hash"])
 
-    if not spark.catalog.tableExists(silver_table):
-        parsed_df.drop("raw_json").write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(silver_table)
+    # Initial write if target table does not exist yet
+    if not spark.catalog.tableExists(silver_tbl):
+        parsed_df.drop("raw_json") \
+            .write \
+            .format("delta") \
+            .mode("overwrite") \
+            .saveAsTable(silver_tbl)
         return
 
-    target_delta = DeltaTable.forName(spark, silver_table)
+    # Handle SCD Type 2 merge logic
+    target_delta = DeltaTable.forName(spark, silver_tbl)
     target_df = target_delta.toDF()
 
-    staged_updates = parsed_df.alias("updates").join(
-        target_df.alias("target"),
-        on=(col(f"updates.{business_key}") == col(f"target.{business_key}")) & col("target.is_current"),
+    # Identify existing active records that changed in incoming batch
+    changed_records = parsed_df.alias("src").join(
+        target_df.alias("tgt"),
+        on=(col(f"src.{key_col}") == col(f"tgt.{key_col}")) & col("tgt.is_current"),
         how="inner"
     ).filter(
-        col("updates.row_hash") != col("target.row_hash")
+        col("src.row_hash") != col("tgt.row_hash")
     ).select(
-        col(f"updates.{business_key}").alias("join_key"),
-        col("updates.*")
+        col(f"src.{key_col}").alias("join_key"),
+        col("src.*")
     )
 
-    staged_data = parsed_df.drop("raw_json").withColumn("join_key", lit(None).cast("string")) \
-        .unionByName(staged_updates.drop("raw_json"), allowMissingColumns=True)
+    # Union new inserts and modified records for two-pass merge execution
+    staged_df = parsed_df.drop("raw_json").withColumn("join_key", lit(None).cast("string")) \
+        .unionByName(changed_records.drop("raw_json"), allowMissingColumns=True)
 
-    target_delta.alias("target").merge(
-        staged_data.alias("staged"),
-        f"target.{business_key} = staged.join_key AND target.is_current = true"
+    # Execute Delta merge (updates modified rows to historical, inserts new current rows)
+    target_delta.alias("tgt").merge(
+        staged_df.alias("src"),
+        f"tgt.{key_col} = src.join_key AND tgt.is_current = true"
     ).whenMatchedUpdate(
-        set={"is_current": "false", "valid_to": "staged.valid_from"}
+        set={"is_current": "false", "valid_to": "src.valid_from"}
     ).whenNotMatchedInsertAll().execute()
 
+    logger.info(f"Successfully processed Silver SCD2 merge for {silver_tbl}")
+
+
+# Main execution run
 for resource in RESOURCES:
     process_silver_scd2(resource)
