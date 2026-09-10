@@ -1,1 +1,5 @@
+## Pipeline Orchestration
+
+The pipeline is fully automated in Microsoft Fabric (`pl_fhir_ingestion_medallion`), executing all three notebooks sequentially upon success:
+
 
