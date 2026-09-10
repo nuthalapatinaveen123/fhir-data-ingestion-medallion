@@ -1,5 +1,16 @@
-## Pipeline Orchestration
+## Pipeline Orchestration & Execution
 
-The pipeline is fully automated in Microsoft Fabric (`pl_fhir_ingestion_medallion`), executing all three notebooks sequentially upon success:
+The end-to-end data flow is orchestrated using Microsoft Fabric Data Pipelines (`pl_fhir_ingestion_medallion`).
+The pipeline automates execution across all three Medallion layers, enforcing strict dependency checks and retry policies.
 
 
+ Key Technical Capabilities
+*Sequential Dependency Management:
+Notebook activities execute strict linear handoffs ($\text{Bronze} \rightarrow \text{Silver} \rightarrow \text{Gold}$).
+A downstream stage triggers only if the prior stage returns a `Succeeded` status.
+
+*Automated Failure Recovery:
+Configured with an exponential backoff policy (up to 2 automatic retries with 30-second intervals) to handle transient API network errors and compute cold-starts seamlessly.
+
+*Auditability & Status Tracking:
+Fully integrated with Microsoft Fabric monitoring, logging real-time execution duration, dynamic parameter pass-throughs, and detailed Spark job telemetry.
