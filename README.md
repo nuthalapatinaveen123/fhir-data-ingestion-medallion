@@ -1,4 +1,4 @@
-# fhir-data-ingestion-medallion
+Microsoft-Fabric-FHIR-Data-Pipeline
 
 
 This repository implements an enterprise-grade, end-to-end data pipeline built on Microsoft Fabric to ingest, process, transform, and model healthcare data following the FHIR (Fast Healthcare Interoperability Resources) standard. The solution relies on a Medallion Architecture across Bronze, Silver, and Gold layers to handle dynamic API schemas, change data capture, and analytical star-schema modeling using PySpark, Delta Lake, and Spark SQL.
