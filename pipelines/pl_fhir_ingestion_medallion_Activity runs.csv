@@ -1,0 +1,79 @@
+"Activity name","Activity status","Error","Run start","Duration","Input","Output"
+"03_gold_analytics","Succeeded","","9/10/2026, 11:56:05 AM","51s","{
+    ""notebookId"": ""ce37069e-8d89-4ad1-af40-2446d6373971"",
+    ""workspaceId"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798""
+}","{
+    ""status"": ""Succeeded"",
+    ""result"": {
+        ""runId"": ""e29b6975-df6c-4cd8-b382-aee95697fa48"",
+        ""runStatus"": ""Succeeded"",
+        ""sessionId"": ""342cafa9-dd93-4058-a711-fbce5645f04d"",
+        ""sparkPool"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798"",
+        ""error"": null,
+        ""lastCheckedOn"": ""2026-09-10T06:26:43.97Z"",
+        ""metadata"": {
+            ""isForPipeline"": null,
+            ""runStartTime"": ""2026-09-10T06:26:08.27247Z"",
+            ""runEndTime"": ""2026-09-10T06:26:43.967723Z""
+        },
+        ""highConcurrencyModeStatus"": null,
+        ""exitValue"": null
+    },
+    ""message"": ""Notebook execution is in Succeeded state, runId: e29b6975-df6c-4cd8-b382-aee95697fa48"",
+    ""SparkMonitoringURL"": ""workloads/de-ds/sparkmonitor/ce37069e-8d89-4ad1-af40-2446d6373971/342cafa9-dd93-4058-a711-fbce5645f04d"",
+    ""sessionSource"": """",
+    ""sessionTag"": """",
+    ""executionDuration"": 47
+}"
+"02_silver_transformation","Succeeded","","9/10/2026, 11:53:42 AM","2m 21s","{
+    ""notebookId"": ""7ab61f5c-515c-4c51-89e2-a55899df6cd6"",
+    ""workspaceId"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798""
+}","{
+    ""status"": ""Succeeded"",
+    ""result"": {
+        ""runId"": ""008d5f41-95d6-406f-97bb-41cb32a34ce4"",
+        ""runStatus"": ""Succeeded"",
+        ""sessionId"": ""e483818e-08e7-4077-999d-16bb75e86318"",
+        ""sparkPool"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798"",
+        ""error"": null,
+        ""lastCheckedOn"": ""2026-09-10T06:25:52.97Z"",
+        ""metadata"": {
+            ""isForPipeline"": null,
+            ""runStartTime"": ""2026-09-10T06:23:45.6587804Z"",
+            ""runEndTime"": ""2026-09-10T06:25:52.9710862Z""
+        },
+        ""highConcurrencyModeStatus"": null,
+        ""exitValue"": null
+    },
+    ""message"": ""Notebook execution is in Succeeded state, runId: 008d5f41-95d6-406f-97bb-41cb32a34ce4"",
+    ""SparkMonitoringURL"": ""workloads/de-ds/sparkmonitor/7ab61f5c-515c-4c51-89e2-a55899df6cd6/e483818e-08e7-4077-999d-16bb75e86318"",
+    ""sessionSource"": """",
+    ""sessionTag"": """",
+    ""executionDuration"": 137
+}"
+"01_bronze_ingestion","Succeeded","","9/10/2026, 11:52:35 AM","1m 6s","{
+    ""notebookId"": ""a048aac7-a576-4715-b497-d920379f2749"",
+    ""workspaceId"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798""
+}","{
+    ""status"": ""Succeeded"",
+    ""result"": {
+        ""runId"": ""6263fad5-9e2e-48e4-ad0f-e2a4bc82cb99"",
+        ""runStatus"": ""Succeeded"",
+        ""sessionId"": ""c92b3614-690f-42f4-b9f6-884104087829"",
+        ""sparkPool"": ""420bfa7a-f11f-486e-8829-dbb7e1a20798"",
+        ""error"": null,
+        ""lastCheckedOn"": ""2026-09-10T06:23:39.38Z"",
+        ""metadata"": {
+            ""isForPipeline"": null,
+            ""runStartTime"": ""2026-09-10T06:22:38.5597929Z"",
+            ""runEndTime"": ""2026-09-10T06:23:36.8753149Z""
+        },
+        ""highConcurrencyModeStatus"": null,
+        ""exitValue"": null
+    },
+    ""message"": ""Notebook execution is in Succeeded state, runId: 6263fad5-9e2e-48e4-ad0f-e2a4bc82cb99"",
+    ""SparkMonitoringURL"": ""workloads/de-ds/sparkmonitor/a048aac7-a576-4715-b497-d920379f2749/c92b3614-690f-42f4-b9f6-884104087829"",
+    ""sessionSource"": """",
+    ""sessionTag"": """",
+    ""executionDuration"": 62
+}"
