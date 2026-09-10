@@ -1,0 +1,48 @@
+%%sql
+-- ==========================================
+-- 1. GOLD DIMENSION: PATIENT
+-- ==========================================
+CREATE OR REPLACE VIEW gold_dim_patient AS
+SELECT 
+    resource_id AS patient_id,
+    gender,
+    birthDate AS birth_date,
+    valid_from,
+    valid_to,
+    is_current
+FROM silver_patient
+WHERE is_current = true;
+
+-- ==========================================
+-- 2. GOLD DIMENSION: CONDITION
+-- ==========================================
+CREATE OR REPLACE VIEW gold_dim_condition AS
+SELECT 
+    resource_id AS condition_id,
+    CAST(code AS STRING) AS condition_name,
+    patient_id_ref AS patient_id,
+    valid_from,
+    valid_to,
+    is_current
+FROM silver_condition
+WHERE is_current = true;
+
+-- ==========================================
+-- 3. GOLD FACT: ENCOUNTER & CLINICAL OBSERVATIONS
+-- ==========================================
+CREATE OR REPLACE VIEW gold_fact_encounter AS
+SELECT 
+    e.resource_id AS encounter_id,
+    e.patient_id_ref AS patient_id,
+    e.status AS encounter_status,
+    o.resource_id AS observation_id,
+    CAST(o.code AS STRING) AS observation_name,
+    c.resource_id AS condition_id
+FROM silver_encounter e
+LEFT JOIN silver_observation o 
+    ON e.patient_id_ref = o.patient_id_ref
+    AND o.is_current = true
+LEFT JOIN silver_condition c 
+    ON e.patient_id_ref = c.patient_id_ref
+    AND c.is_current = true
+WHERE e.is_current = true;
