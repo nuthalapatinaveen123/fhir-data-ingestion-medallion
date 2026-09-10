@@ -4,21 +4,24 @@
 This project implements a production-grade **Medallion Architecture** (Bronze, Silver, Gold) on **Microsoft Fabric** to ingest, process, and model healthcare data following the **FHIR (Fast Healthcare Interoperability Resources)** standard.
 
 [ Raw FHIR APIs ]
-│
-▼
-┌──────────────────┐
-│  BRONZE LAYER   │ ➔ Ingestion & Raw JSON Storage with Backoff Retry
-└────────┬─────────┘
-│
-▼
-┌──────────────────┐
-│   SILVER LAYER   │ ➔ SCD Type 2 History & Schema Evolution (Delta Lake)
-└────────┬─────────┘
-│
-▼
-┌──────────────────┐
-│   GOLD LAYER     │ ➔ Analytical Star Schema Views (SQL / Power BI Ready)
-└────────┬─────────┘
+       │
+       ▼
+┌───────────────────────────────────────────────────────────┐
+│                      BRONZE LAYER                         │
+│  ➔ Ingestion & Raw JSON Storage with Backoff Retry        │
+└─────────────────────────────┬─────────────────────────────┘
+                              │
+                              ▼
+┌───────────────────────────────────────────────────────────┐
+│                      SILVER LAYER                         │
+│  ➔ SCD Type 2 History & Schema Evolution (Delta Lake)     │
+└─────────────────────────────┬─────────────────────────────┘
+                              │
+                              ▼
+┌───────────────────────────────────────────────────────────┐
+│                       GOLD LAYER                          │
+│  ➔ Analytical Star Schema Views (SQL / Power BI Ready)    │
+└───────────────────────────────────────────────────────────┘
 
 ## Technical Features & Implementation
 
